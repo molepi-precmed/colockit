@@ -1,0 +1,46 @@
+name: R tests
+
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+    branches: [main, master]
+  workflow_dispatch:   # allows manual trigger from GitHub UI or gh CLI
+
+jobs:
+  test:
+    runs-on: self-hosted
+
+    env:
+      ## Path to the 1000 Genomes EUR reference panel on the server
+      ## (without extension — .bed/.bim/.fam must exist at this path).
+      ## Set this in the runner's environment or as a repo secret if preferred.
+      COLOCKIT_REFPLINK: ${{ vars.COLOCKIT_REFPLINK }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install/update R package dependencies
+        shell: Rscript {0}
+        run: |
+          options(repos = c(CRAN = "https://cloud.r-project.org"))
+          pkg <- desc::desc_get_deps()$package
+          pkg <- pkg[pkg != "R"]
+          to_install <- pkg[!pkg %in% installed.packages()[, "Package"]]
+          if (length(to_install) > 0)
+            install.packages(to_install, dependencies = TRUE)
+
+      - name: Run tests
+        shell: Rscript {0}
+        run: |
+          pkgload::load_all(".", quiet = TRUE)
+          results <- testthat::test_local(".", reporter = "progress")
+          if (any(as.data.frame(results)$failed > 0))
+            stop("One or more tests failed.")
+
+      - name: R CMD check
+        shell: bash
+        run: |
+          R CMD build . --no-manual
+          R CMD check --no-manual *_*.tar.gz
