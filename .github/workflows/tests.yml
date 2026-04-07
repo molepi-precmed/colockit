@@ -48,7 +48,11 @@ jobs:
 
       - name: R CMD check
         shell: bash
+        env:
+          _R_CHECK_FORCE_SUGGESTS_: "false"
         run: |
           export PATH="/usr/local/bin:$PATH"
+          export R_LIBS="$(Rscript -e 'cat(renv::paths$library())' 2>/dev/null)"
+          echo "R_LIBS=$R_LIBS"
           R CMD build . --no-manual
-          R CMD check --no-manual *_*.tar.gz
+          R CMD check --no-manual colockit_*.tar.gz
