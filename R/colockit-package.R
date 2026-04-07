@@ -21,6 +21,12 @@
 #' * `"susie"` — coloc SuSiE ([coloc::coloc.susie()])
 #' * `"pwcoco"` — PWCoCo (external command-line tool)
 #'
+#' @references
+#' Robinson JW, Hemani G, Babaei MS, Huang Y, Baird DA, Tsai EA, Chen C-Y,
+#' Gaunt TR, Zheng J (2022). An efficient and robust tool for colocalisation:
+#' Pair-wise Conditional and Colocalisation (PWCoCo). *bioRxiv*.
+#' \doi{10.1101/2022.08.08.503158}
+#'
 #' @aliases colockit-package
 #' @importFrom stats qt
 "_PACKAGE"

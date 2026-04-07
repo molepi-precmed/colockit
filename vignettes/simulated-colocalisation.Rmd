@@ -172,12 +172,62 @@ if (!is.null(result_susie)) {
 
 ---
 
+## Running PWCoCo
+
+PWCoCo is an external command-line tool that performs pairwise conditional
+colocalisation. It is the appropriate method when there are multiple
+independent signals in the region and you want stepwise conditional analysis
+rather than a fully Bayesian multiple-causal model.
+
+The chunk below runs only when `pwcoco` is found on `PATH`; it is skipped
+silently during package checks and on machines where the tool is not
+installed.
+
+```{r colocalise-pwcoco, message=FALSE}
+pwcoco_available <- nzchar(Sys.which("pwcoco"))
+
+if (pwcoco_available) {
+  ## PWCoCo requires a PLINK reference panel for LD computation.
+  ## Adjust refplinkfile to point to your local panel.
+  refplinkfile <- Sys.getenv("COLOCKIT_REFPLINK", unset = NA_character_)
+
+  if (!is.na(refplinkfile) && file.exists(paste0(refplinkfile, ".bim"))) {
+    out_dir_pwcoco <- file.path(tempdir(), "simulated_coloc_pwcoco")
+
+    result_pwcoco <- colocalise(
+      regions       = regions,
+      locus         = data.table(chrom = 1L, startpos = 0L, endpos = 501L),
+      analysis_type = "pwcoco",
+      output_dir    = out_dir_pwcoco,
+      refplinkfile  = refplinkfile,
+      cutoff        = 0.05
+    )
+
+    if (!is.null(result_pwcoco)) {
+      cat("PWCoCo results:\n")
+      print(result_pwcoco)
+    }
+  } else {
+    cat("pwcoco found but COLOCKIT_REFPLINK is not set or panel missing.\n",
+        "Set the environment variable to a PLINK panel path to run this example.\n")
+  }
+} else {
+  cat("pwcoco not found on PATH — skipping PWCoCo example.\n",
+      "Install pwcoco and ensure it is on your PATH to run this section.\n")
+}
+```
+
+---
+
 ## Key take-aways
 
 - When the causal variant is truly shared, colockit correctly identifies
-  PP.H4 ≈ 1 using ABF.
+  PP.H4 ≈ 1 using both ABF and SuSiE.
 - ABF assumes a single causal variant per region; use SuSiE for loci with
   multiple independent signals.
+- PWCoCo performs stepwise conditional colocalisation and is preferred when
+  there are multiple independent signals. It requires an external binary and
+  a PLINK reference panel.
 - The `colocalise()` function saves a colocalisation plot (`coloc.abf.png` /
   `coloc.susie.png`) alongside the posterior probabilities, colouring each
   SNP by PP.H4 and labelling the top variant.

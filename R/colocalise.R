@@ -23,6 +23,12 @@
 #'   `$summary` and `$results`). For `"pwcoco"`: a `data.table` of PWCoCo
 #'   output.  Returns `NULL` if SuSiE fails.
 #'
+#' @references
+#' **PWCoCo:** Robinson JW, Hemani G, Babaei MS, Huang Y, Baird DA, Tsai EA,
+#' Chen C-Y, Gaunt TR, Zheng J (2022). An efficient and robust tool for
+#' colocalisation: Pair-wise Conditional and Colocalisation (PWCoCo).
+#' *bioRxiv*. \doi{10.1101/2022.08.08.503158}
+#'
 #' @examples
 #' \dontrun{
 #' ## After running prepare_regions():
