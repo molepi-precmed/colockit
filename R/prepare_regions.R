@@ -54,6 +54,41 @@
 #'
 #' @seealso [colocalise()] for Stage 2.
 #'
+#' @examples
+#' \dontrun{
+#' ## Standalone backend ------------------------------------------------
+#' locus <- data.table::data.table(
+#'   chrom    = 22L,
+#'   startpos = 29001000L,
+#'   endpos   = 29011000L
+#' )
+#'
+#' ## gwas1 and gwas2 must be data.tables with columns:
+#' ## snp, dbsnpid, chrom, pos, allele, oth.allele,
+#' ## beta, pvalue, n_samples, freq, trait.name
+#' regions <- prepare_regions(
+#'   locus        = locus,
+#'   gwas1        = gwas1,
+#'   gwas2        = gwas2,
+#'   output_dir   = "path/to/output",
+#'   refplinkfile = "path/to/kg.2020.hg38.eur",
+#'   backend      = "standalone"
+#' )
+#'
+#' ## Genoscores backend ------------------------------------------------
+#' con <- DBI::dbConnect(...)
+#' regions <- prepare_regions(
+#'   locus        = locus,
+#'   gwas1        = 42L,   # integer gwasid
+#'   gwas2        = 57L,
+#'   output_dir   = "path/to/output",
+#'   refplinkfile = "path/to/kg.2020.hg38.eur",
+#'   backend      = "genoscores",
+#'   gwas_type    = "published",
+#'   con          = con
+#' )
+#' }
+#'
 #' @export
 prepare_regions <- function(locus,
                              gwas1,

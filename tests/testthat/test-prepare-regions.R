@@ -41,3 +41,9 @@ test_that(".valid_dir creates directory if absent", {
     expect_true(dir.exists(out))
     unlink(tmp, recursive = TRUE)
 })
+
+test_that(".check_refplink errors when .bim file is absent", {
+    expect_error(
+        colockit:::.check_refplink("/nonexistent/path/panel"),
+        regexp = "not found")
+})

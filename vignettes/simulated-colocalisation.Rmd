@@ -1,0 +1,185 @@
+---
+title: "Simulated colocalisation"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Simulated colocalisation}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(collapse = TRUE, comment = "#>")
+```
+
+## Why simulation?
+
+In a real analysis you never know the ground truth. Simulation lets us
+verify that the pipeline gives the correct answer when we *do* know it,
+providing confidence before applying it to real data.
+
+The `coloc` package ships a built-in dataset (`coloc_test_data`) with four
+simulated GWAS traits and a known causal structure:
+
+| Dataset | Causal SNP(s) |
+|---|---|
+| D1 | SNP 105 |
+| D2 | SNP 105 |
+| D3 | SNPs 105 and 89 |
+| D4 | SNP 105 |
+
+Because D1 and D2 share the same causal variant (SNP 105), we expect
+colocalisation analysis to return a high PP.H4. The LD matrix is
+pre-computed from a simulated reference panel.
+
+---
+
+## Preparing the `regions` object
+
+`colocalise()` takes a named list `list(src, trgt, ldmat)` as returned by
+`prepare_regions()`. When the LD matrix is already available (as here), we can
+construct this list directly without running `prepare_regions()`.
+
+```{r prepare}
+library(colockit)
+library(data.table)
+
+## Load the coloc test dataset
+data("coloc_test_data", package = "coloc")
+D1 <- coloc_test_data$D1
+D2 <- coloc_test_data$D2
+
+cat("D1 causal SNP:", coloc_test_data$causals$D1, "\n")
+cat("D2 causal SNP:", coloc_test_data$causals$D2, "\n")
+```
+
+```{r build-regions}
+## Helper: convert a coloc-format list to a colockit-compatible data.table
+coloc_to_dt <- function(d, trait_name) {
+  data.table(
+    snp        = d$snp,
+    dbsnpid    = as.integer(sub("^s", "", d$snp)),
+    chrom      = 1L,
+    pos        = as.integer(d$position),
+    allele     = "A",
+    oth.allele = "G",
+    beta       = d$beta,
+    varbeta    = d$varbeta,
+    se         = sqrt(d$varbeta),
+    pvalue     = 2 * pnorm(-abs(d$beta / sqrt(d$varbeta))),
+    freq       = d$MAF,
+    n_samples  = as.integer(d$N),
+    trait.name = trait_name
+  )
+}
+
+src  <- coloc_to_dt(D1, "Trait 1 (causal: SNP 105)")
+trgt <- coloc_to_dt(D2, "Trait 2 (causal: SNP 105)")
+
+## Use the LD matrix included in the test data
+ldmat <- D1$LD
+rownames(ldmat) <- D1$snp
+colnames(ldmat) <- D1$snp
+
+regions <- list(src = src, trgt = trgt, ldmat = ldmat)
+
+cat(nrow(src), "SNPs, LD matrix", nrow(ldmat), "x", ncol(ldmat), "\n")
+```
+
+---
+
+## Running ABF colocalisation
+
+```{r colocalise-abf, message=FALSE}
+out_dir <- file.path(tempdir(), "simulated_coloc")
+
+result <- colocalise(
+  regions       = regions,
+  locus         = data.table(chrom = 1L, startpos = 0L, endpos = 501L),
+  analysis_type = "abf",
+  output_dir    = out_dir
+)
+```
+
+### Posterior probabilities
+
+```{r posteriors}
+pp <- result$summary[c("PP.H0.abf","PP.H1.abf","PP.H2.abf",
+                        "PP.H3.abf","PP.H4.abf")]
+round(pp, 4)
+```
+
+PP.H4 is very close to 1 — strong evidence that both traits share a single
+causal variant, consistent with the simulation design.
+
+---
+
+## Contrasting with distinct causal variants
+
+D1 (causal: SNP 105) and D3 (causals: SNPs 105 **and** 89) share one causal
+variant but D3 has an additional signal. We expect PP.H4 to remain high under
+ABF (which assumes a single causal variant per trait), but SuSiE would
+distinguish the extra signal in D3.
+
+```{r contrast}
+D3    <- coloc_test_data$D3
+trgt3 <- coloc_to_dt(D3, "Trait 3 (causals: SNPs 105 & 89)")
+ldmat3 <- D3$LD
+rownames(ldmat3) <- D3$snp
+colnames(ldmat3) <- D3$snp
+
+regions13 <- list(src = src, trgt = trgt3, ldmat = ldmat3)
+
+out_dir13 <- file.path(tempdir(), "simulated_coloc_13")
+result13 <- colocalise(
+  regions       = regions13,
+  locus         = data.table(chrom = 1L, startpos = 0L, endpos = 501L),
+  analysis_type = "abf",
+  output_dir    = out_dir13
+)
+
+pp13 <- result13$summary[c("PP.H0.abf","PP.H1.abf","PP.H2.abf",
+                             "PP.H3.abf","PP.H4.abf")]
+round(pp13, 4)
+```
+
+ABF still returns high PP.H4 here because the shared causal (SNP 105)
+dominates the signal and ABF cannot model multiple causal variants per trait.
+For loci where multiple independent signals are suspected, use
+`analysis_type = "susie"`.
+
+---
+
+## Running SuSiE colocalisation
+
+SuSiE fits a sum-of-single-effects model that can accommodate multiple causal
+variants per trait.
+
+```{r colocalise-susie, message=FALSE, warning=FALSE}
+out_dir_susie <- file.path(tempdir(), "simulated_coloc_susie")
+
+result_susie <- colocalise(
+  regions       = regions,
+  locus         = data.table(chrom = 1L, startpos = 0L, endpos = 501L),
+  analysis_type = "susie",
+  output_dir    = out_dir_susie
+)
+
+if (!is.null(result_susie)) {
+  cat("SuSiE summary (best credible set):\n")
+  print(result_susie$summary)
+}
+```
+
+---
+
+## Key take-aways
+
+- When the causal variant is truly shared, colockit correctly identifies
+  PP.H4 ≈ 1 using ABF.
+- ABF assumes a single causal variant per region; use SuSiE for loci with
+  multiple independent signals.
+- The `colocalise()` function saves a colocalisation plot (`coloc.abf.png` /
+  `coloc.susie.png`) alongside the posterior probabilities, colouring each
+  SNP by PP.H4 and labelling the top variant.
+
+For a real-data workflow, see `vignette("getting-started")`.

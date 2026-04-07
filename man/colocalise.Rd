@@ -46,3 +46,26 @@ Takes the output of \code{\link[=prepare_regions]{prepare_regions()}} and runs t
 colocalisation method. Saves formatted input data and a colocalisation
 plot to \code{output_dir}.
 }
+\examples{
+\dontrun{
+## After running prepare_regions():
+result <- colocalise(
+  regions       = regions,
+  locus         = locus,
+  analysis_type = "abf",
+  output_dir    = "path/to/output"
+)
+
+## Inspect posterior probabilities:
+result$summary
+
+## SuSiE (handles multiple causal variants):
+result_susie <- colocalise(
+  regions       = regions,
+  locus         = locus,
+  analysis_type = "susie",
+  output_dir    = "path/to/output"
+)
+}
+
+}

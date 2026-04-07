@@ -40,7 +40,6 @@ and private GWAS.
 }
 
 \author{
-\strong{Maintainer}: Andrico \email{andrico@example.com}
+\strong{Maintainer}: Andrii Iakovliev \email{a.iakovliev@icloud.com}
 
 }
-\keyword{internal}

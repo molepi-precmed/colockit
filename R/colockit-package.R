@@ -21,7 +21,7 @@
 #' * `"susie"` — coloc SuSiE ([coloc::coloc.susie()])
 #' * `"pwcoco"` — PWCoCo (external command-line tool)
 #'
-#' @keywords internal
+#' @aliases colockit-package
 #' @importFrom stats qt
 "_PACKAGE"
 

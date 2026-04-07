@@ -23,6 +23,28 @@
 #'   `$summary` and `$results`). For `"pwcoco"`: a `data.table` of PWCoCo
 #'   output.  Returns `NULL` if SuSiE fails.
 #'
+#' @examples
+#' \dontrun{
+#' ## After running prepare_regions():
+#' result <- colocalise(
+#'   regions       = regions,
+#'   locus         = locus,
+#'   analysis_type = "abf",
+#'   output_dir    = "path/to/output"
+#' )
+#'
+#' ## Inspect posterior probabilities:
+#' result$summary
+#'
+#' ## SuSiE (handles multiple causal variants):
+#' result_susie <- colocalise(
+#'   regions       = regions,
+#'   locus         = locus,
+#'   analysis_type = "susie",
+#'   output_dir    = "path/to/output"
+#' )
+#' }
+#'
 #' @export
 #' @importFrom coloc coloc.abf coloc.susie
 #' @importFrom data.table fwrite fread setDT setnames

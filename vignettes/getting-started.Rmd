@@ -1,0 +1,181 @@
+---
+title: "Getting started with colockit"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Getting started with colockit}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(collapse = TRUE, comment = "#>")
+```
+
+## Overview
+
+colockit provides a two-stage pipeline for genomic colocalisation analysis:
+
+1. **`prepare_regions()`** — harmonises two GWAS datasets within a locus,
+   aligns effect alleles, and computes an LD matrix from a PLINK reference panel.
+2. **`colocalise()`** — runs the chosen colocalisation method (ABF, SuSiE, or
+   PWCoCo) on the prepared regions.
+
+Two backends are available:
+
+- **`"standalone"`** — no external database required; you supply GWAS summary
+  statistics directly as `data.table`s.
+- **`"genoscores"`** — integrates with the Genoscores database to retrieve
+  published GWAS or generate private GWAS via SNPTEST.
+
+---
+
+## Input format (standalone backend)
+
+Both `gwas1` and `gwas2` must be `data.table`s with the following columns:
+
+| Column | Type | Description |
+|---|---|---|
+| `snp` | character | rsid, e.g. `"rs997567"` |
+| `dbsnpid` | integer | numeric dbSNP identifier |
+| `chrom` | integer | chromosome number |
+| `pos` | integer | genomic position (hg38) |
+| `allele` | character | effect allele |
+| `oth.allele` | character | other allele |
+| `beta` | numeric | effect size |
+| `pvalue` | numeric | association p-value |
+| `n_samples` | integer | sample size |
+| `freq` | numeric | effect allele frequency |
+| `trait.name` | character | trait label |
+
+---
+
+## Standalone flow
+
+```{r standalone, eval=FALSE}
+library(colockit)
+library(data.table)
+
+## Define the locus of interest (hg38 coordinates)
+locus <- data.table(
+  chrom    = 22L,
+  startpos = 29001000L,
+  endpos   = 29011000L
+)
+
+## gwas1 and gwas2 are data.tables in the format described above.
+## Here we assume they have been loaded from summary statistic files.
+gwas1 <- fread("trait1_summary_stats.csv")
+gwas2 <- fread("trait2_summary_stats.csv")
+
+## Stage 1 — harmonise, compute LD
+regions <- prepare_regions(
+  locus        = locus,
+  gwas1        = gwas1,
+  gwas2        = gwas2,
+  output_dir   = "results/locus_22_29Mb",
+  refplinkfile = "path/to/kg.2020.hg38.eur",
+  backend      = "standalone"
+)
+
+## Stage 2 — run colocalisation
+## ABF (fast, single causal variant assumption)
+result_abf <- colocalise(
+  regions       = regions,
+  locus         = locus,
+  analysis_type = "abf",
+  output_dir    = "results/locus_22_29Mb"
+)
+result_abf$summary
+
+## SuSiE (handles multiple causal variants)
+result_susie <- colocalise(
+  regions       = regions,
+  locus         = locus,
+  analysis_type = "susie",
+  output_dir    = "results/locus_22_29Mb"
+)
+result_susie$summary
+```
+
+`prepare_regions()` writes the following files to `output_dir`:
+
+- `gwas1.csv`, `gwas2.csv` — harmonised summary statistics
+- `ld.matrix.Rdata.gz` — LD correlation matrix
+- `locus.plot.png` — preview Manhattan-style locus plot
+
+`colocalise()` additionally writes:
+
+- `formatted.region.Rdata.gz` — formatted input for the coloc method
+- `coloc.abf.png` / `coloc.susie.png` — colocalisation plot with LD heatmap
+
+---
+
+## Genoscores flow
+
+The genoscores backend works identically from the user's perspective,
+but retrieves GWAS data from the Genoscores database.
+
+```{r genoscores, eval=FALSE}
+library(DBI)
+
+## Establish a database connection (details depend on your installation)
+con <- dbConnect(...)
+
+## Published GWAS: supply integer gwasids
+regions <- prepare_regions(
+  locus        = locus,
+  gwas1        = 42L,   # gwasid for trait 1
+  gwas2        = 57L,   # gwasid for trait 2
+  output_dir   = "results/locus_22_29Mb",
+  refplinkfile = "path/to/kg.2020.hg38.eur",
+  backend      = "genoscores",
+  gwas_type    = "published",
+  con          = con
+)
+
+## Mixed: published GWAS + private GWAS
+private_gwas <- create_private_gwas(
+  outcome    = "bmi",
+  samplefile = "samples.sample",
+  plinkfile  = "genotypes/all_chr",
+  locus      = locus,
+  output_dir = "results/private_gwas"
+)
+
+regions_mixed <- prepare_regions(
+  locus        = locus,
+  gwas1        = 42L,
+  gwas2        = private_gwas,
+  output_dir   = "results/locus_22_29Mb_mixed",
+  refplinkfile = "path/to/kg.2020.hg38.eur",
+  backend      = "genoscores",
+  gwas_type    = "mixed",
+  con          = con
+)
+```
+
+The genoscores backend additionally:
+
+- Resolves missing `oth.allele` values by querying the Genoscores dbSNP table
+- Retrieves effect allele frequencies from the `r_freqs` table
+- Cross-checks SNPTEST-derived frequencies against dbSNP (for private GWAS)
+
+---
+
+## Interpreting results
+
+The `$summary` vector from `coloc.abf` contains posterior probabilities for
+five hypotheses:
+
+| Hypothesis | Interpretation |
+|---|---|
+| H0 | Neither trait has a genetic association in this region |
+| H1 | Only trait 1 is associated |
+| H2 | Only trait 2 is associated |
+| H3 | Both traits are associated, but with **different** causal variants |
+| H4 | Both traits are associated, sharing a **single** causal variant |
+
+A value of PP.H4 > 0.8 is commonly used as evidence for colocalisation.
+
+See `vignette("simulated-colocalisation")` for a worked example where
+colocalisation is known from the simulation design.

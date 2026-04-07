@@ -21,6 +21,7 @@
 prepare_regions_standalone <- function(locus, gwas1, gwas2,
                                         output_dir, refplinkfile) {
     ## ------ input validation ------------------------------------------
+    output_dir <- .valid_dir(output_dir)
     .check_locus(locus)
     if (!inherits(gwas1, "data.table"))
         stop("`gwas1` must be a data.table.")
