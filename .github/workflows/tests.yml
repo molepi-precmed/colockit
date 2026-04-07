@@ -16,9 +16,6 @@ jobs:
       ## (without extension — .bed/.bim/.fam must exist at this path).
       ## Set this in the runner's environment or as a repo secret if preferred.
       COLOCKIT_REFPLINK: ${{ vars.COLOCKIT_REFPLINK }}
-      ## Tell renv where to cache the library between runs
-      RENV_PATHS_CACHE: /opt/renv-cache
-
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -26,7 +23,7 @@ jobs:
       - name: Cache renv library
         uses: actions/cache@v4
         with:
-          path: renv/library
+          path: ~/.cache/R/renv
           key: renv-${{ hashFiles('renv.lock') }}
           restore-keys: renv-
 
