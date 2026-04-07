@@ -51,7 +51,8 @@ jobs:
         run: |
           options(pkgbuild.has_compiler = TRUE)
           rcmdcheck::rcmdcheck(
-            args     = c("--no-manual", "--no-build-vignettes"),
-            error_on = "warning",
-            check_dir = "check"
+            args      = c("--no-manual", "--no-build-vignettes"),
+            error_on  = "warning",
+            check_dir = "check",
+            env       = c("_R_CHECK_FORCE_SUGGESTS_" = "false")
           )
