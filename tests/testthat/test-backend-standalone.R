@@ -22,7 +22,8 @@
 ##   rs9608719    29008663  G       A           0.499
 ##   rs4580479    29009968  T       G           0.469
 
-panel_path  <- "/Users/andrico/Sites/tests-data/kg.2020.hg38.eur"
+panel_path  <- Sys.getenv("COLOCKIT_REFPLINK",
+                          unset = "/Users/andrico/Sites/tests-data/kg.2020.hg38.eur")
 panel_available <- file.exists(paste0(panel_path, ".bim"))
 
 ## ---- shared helpers -------------------------------------------------------
