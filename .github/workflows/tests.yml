@@ -16,40 +16,34 @@ jobs:
       ## (without extension — .bed/.bim/.fam must exist at this path).
       ## Set this in the runner's environment or as a repo secret if preferred.
       COLOCKIT_REFPLINK: ${{ vars.COLOCKIT_REFPLINK }}
+      ## Tell renv where to cache the library between runs
+      RENV_PATHS_CACHE: /opt/renv-cache
 
     steps:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Install/update R package dependencies
+      - name: Cache renv library
+        uses: actions/cache@v4
+        with:
+          path: renv/library
+          key: renv-${{ hashFiles('renv.lock') }}
+          restore-keys: renv-
+
+      - name: Restore renv library
         shell: Rscript {0}
         run: |
-          options(repos = c(CRAN = "https://cloud.r-project.org"))
-
-          ## Ensure pak is available for robust dependency resolution
-          if (!requireNamespace("pak", quietly = TRUE))
-            install.packages("pak")
-
-          ## coloc is on CRAN; bigsnpr and LDheatmap may need special handling
-          cran_pkgs <- c(
-            "data.table", "coloc", "bigsnpr", "ggplot2", "ggrepel",
-            "gridExtra", "grDevices", "pkgload", "testthat", "roxygen2",
-            "knitr", "rmarkdown"
-          )
-          to_install <- cran_pkgs[!cran_pkgs %in% installed.packages()[, "Package"]]
-          if (length(to_install) > 0)
-            install.packages(to_install, dependencies = TRUE)
-
-          ## LDheatmap is on GitHub (SFUStatgen/LDheatmap) if not on CRAN
-          if (!requireNamespace("LDheatmap", quietly = TRUE)) {
-            if (!requireNamespace("remotes", quietly = TRUE))
-              install.packages("remotes")
-            remotes::install_github("SFUStatgen/LDheatmap")
-          }
+          options(repos = c(CRAN = "https://packagemanager.posit.co/cran/__linux__/focal/latest"))
+          if (!requireNamespace("renv", quietly = TRUE))
+            install.packages("renv")
+          ## pkgbuild on this server reports no compiler even though gcc works fine
+          options(pkgbuild.has_compiler = TRUE)
+          renv::restore(prompt = FALSE)
 
       - name: Run tests
         shell: Rscript {0}
         run: |
+          options(pkgbuild.has_compiler = TRUE)
           pkgload::load_all(".", quiet = TRUE)
           results <- testthat::test_local(".", reporter = "progress")
           if (any(as.data.frame(results)$failed > 0))
