@@ -38,6 +38,7 @@ Suggests:
     genoscores,
     knitr,
     pkgload,
+    rcmdcheck,
     rmarkdown,
     roxygen2,
     testthat (>= 3.0.0)

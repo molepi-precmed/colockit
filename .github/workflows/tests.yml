@@ -47,12 +47,11 @@ jobs:
             stop("One or more tests failed.")
 
       - name: R CMD check
-        shell: bash
-        env:
-          _R_CHECK_FORCE_SUGGESTS_: "false"
+        shell: Rscript {0}
         run: |
-          export PATH="/usr/local/bin:$PATH"
-          export R_LIBS="$(Rscript -e 'cat(renv::paths$library())' 2>/dev/null)"
-          echo "R_LIBS=$R_LIBS"
-          R CMD build . --no-manual
-          R CMD check --no-manual colockit_*.tar.gz
+          options(pkgbuild.has_compiler = TRUE)
+          rcmdcheck::rcmdcheck(
+            args     = c("--no-manual", "--no-build-vignettes"),
+            error_on = "warning",
+            check_dir = "check"
+          )
