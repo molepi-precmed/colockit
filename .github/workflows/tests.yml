@@ -50,7 +50,11 @@ jobs:
         shell: bash
         run: |
           export PATH="/usr/local/bin:$PATH"
-          ## Use the renv project library so R CMD check sees the correct package versions
-          export R_LIBS="$(Rscript -e 'cat(renv::paths$library())')"
+          ## Point R exclusively at the renv project library so R CMD check
+          ## does not pick up stale packages from the system site-library.
+          RENV_LIB="$(Rscript -e 'cat(renv::paths$library())')"
+          export R_LIBS="$RENV_LIB"
+          export R_LIBS_USER=""
+          export R_LIBS_SITE=""
           R CMD build . --no-manual
           R CMD check --no-manual *_*.tar.gz
