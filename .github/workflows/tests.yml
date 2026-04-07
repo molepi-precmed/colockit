@@ -25,11 +25,27 @@ jobs:
         shell: Rscript {0}
         run: |
           options(repos = c(CRAN = "https://cloud.r-project.org"))
-          pkg <- desc::desc_get_deps()$package
-          pkg <- pkg[pkg != "R"]
-          to_install <- pkg[!pkg %in% installed.packages()[, "Package"]]
+
+          ## Ensure pak is available for robust dependency resolution
+          if (!requireNamespace("pak", quietly = TRUE))
+            install.packages("pak")
+
+          ## coloc is on CRAN; bigsnpr and LDheatmap may need special handling
+          cran_pkgs <- c(
+            "data.table", "coloc", "bigsnpr", "ggplot2", "ggrepel",
+            "gridExtra", "grDevices", "pkgload", "testthat", "roxygen2",
+            "knitr", "rmarkdown"
+          )
+          to_install <- cran_pkgs[!cran_pkgs %in% installed.packages()[, "Package"]]
           if (length(to_install) > 0)
             install.packages(to_install, dependencies = TRUE)
+
+          ## LDheatmap is on GitHub (SFUStatgen/LDheatmap) if not on CRAN
+          if (!requireNamespace("LDheatmap", quietly = TRUE)) {
+            if (!requireNamespace("remotes", quietly = TRUE))
+              install.packages("remotes")
+            remotes::install_github("SFUStatgen/LDheatmap")
+          }
 
       - name: Run tests
         shell: Rscript {0}
@@ -42,5 +58,6 @@ jobs:
       - name: R CMD check
         shell: bash
         run: |
+          export PATH="/usr/local/bin:$PATH"
           R CMD build . --no-manual
           R CMD check --no-manual *_*.tar.gz
