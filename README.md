@@ -22,16 +22,14 @@
 
 ## Installation
 
-Install from a local checkout:
+```r
+remotes::install_github("molepi-precmed/colockit")
+```
+
+Or from a local checkout:
 
 ```r
 remotes::install_local("path/to/colockit")
-```
-
-Or from GitHub once the repository is public:
-
-```r
-remotes::install_github("molepi-precmed/colockit")
 ```
 
 ## Quick start
@@ -107,6 +105,16 @@ Private GWAS can be created with `create_private_gwas()` and used with
 
 - `formatted.region.Rdata.gz` — formatted coloc input
 - `coloc.abf.png` / `coloc.susie.png` — colocalisation plot coloured by PP.H4
+
+## Development
+
+Tests and `R CMD check` are run manually on a server with the 1000 Genomes
+reference panel and PWCoCo installed:
+
+```bash
+./run-tests.sh            # pull, restore deps, run tests + R CMD check
+./run-tests.sh --no-pull  # skip git pull (use current working tree)
+```
 
 ## Learn more
 
