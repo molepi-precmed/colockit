@@ -1,0 +1,28 @@
+.Rhistory
+.Rapp.history
+.RData
+.Ruserdata
+.Renviron
+
+# R package build/check artifacts
+*.tar.gz
+*.Rcheck/
+
+# Coverage and testing artifacts
+.Rprof
+.Rproj.user/
+coverage/
+Rplots.pdf
+
+# Documentation site output
+docs/
+
+# Dependency management cache
+renv/library/
+renv/staging/
+renv/python/
+
+# Editor/OS artifacts
+.DS_Store
+*.swp
+*.swo

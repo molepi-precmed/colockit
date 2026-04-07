@@ -1,0 +1,6 @@
+^\.Renviron$
+^\.gitignore$
+^\.Rcheck$
+^.*\.Rcheck$
+^\.git$
+^\.DS_Store$

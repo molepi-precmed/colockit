@@ -1,0 +1,40 @@
+Package: colockit
+Type: Package
+Title: A Toolkit for Colocalisation Analysis
+Version: 0.1.0
+Authors@R: person("Andrii Iakovliev", role = c("aut", "cre"),
+                  email = "a.iakovliev@icloud.com")
+Author: Andrii Iakovliev [aut, cre]
+Maintainer: Andrii Iakovliev <a.iakovliev@icloud.com>
+Description: Provides a two-stage pipeline for genomic colocalisation
+    analysis. In the first stage, GWAS summary statistics for two traits are
+    harmonised, allele frequencies are validated, and a linkage disequilibrium
+    matrix is computed for the region of interest. In the second stage, the
+    prepared data are passed to one of several supported colocalisation methods.
+    Two backends are available: a standalone backend that accepts user-supplied
+    summary statistics and LD matrices without any external database dependency,
+    and a genoscores backend that integrates with the Genoscores database and
+    infrastructure for published and private GWAS. Currently supported methods
+    are coloc ABF, coloc SuSiE, and PWCoCo, with placeholders for additional
+    methods in future releases.
+License: MIT + file LICENSE
+Encoding: UTF-8
+Roxygen: list(markdown = TRUE)
+RoxygenNote: 7.3.3
+Depends:
+    R (>= 4.1.0)
+Imports:
+    data.table (>= 1.14.0),
+    coloc (>= 5.1.0),
+    bigsnpr (>= 1.12.0),
+    ggplot2 (>= 3.4.0),
+    ggrepel (>= 0.9.0),
+    gridExtra (>= 2.3),
+    LDheatmap (>= 1.0.0),
+    grDevices,
+    stats
+Suggests:
+    DBI,
+    genoscores,
+    testthat (>= 3.0.0)
+Config/testthat/edition: 3
