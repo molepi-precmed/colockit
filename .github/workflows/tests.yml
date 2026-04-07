@@ -1,11 +1,8 @@
 name: R tests
 
 on:
-  push:
-    branches: [main, master]
-  pull_request:
-    branches: [main, master]
-  workflow_dispatch:   # allows manual trigger from GitHub UI or gh CLI
+  workflow_dispatch:   # only triggered manually — keeps self-hosted runner safe
+                       # from untrusted fork PRs in a public repository
 
 jobs:
   test:
